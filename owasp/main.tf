@@ -1,5 +1,6 @@
 resource "aws_wafv2_web_acl" "awsMangedRules" {
-  name  = "WAF_SQL_Protection"
+  name  = var.owasp_web_acl_name
+  description = var.owasp_web_acl_description
   scope = "REGIONAL"
 
   default_action {
@@ -23,8 +24,8 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
   rule {
     name     = "AWSManagedRulesCommonRule"
     priority = 0
-    override_action {
-      none {}
+   override_action {
+      count {}
     }
     statement {
       managed_rule_group_statement {
@@ -74,7 +75,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesKnownBadInputsRule"
     priority = 2
     override_action {
-      none {}
+      count {}
     }
     statement {
       managed_rule_group_statement {
@@ -97,8 +98,8 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
   rule {
     name     = "AWSManagedRulesSQLiRule"
     priority = 1
-    override_action {
-      none {}
+  override_action {
+      count {}
     }
     statement {
       managed_rule_group_statement {
@@ -123,7 +124,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesLinuxRule"
     priority = 3
     override_action {
-      none {}
+      count {}
     }
     statement {
       managed_rule_group_statement {
@@ -149,8 +150,8 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
   rule {
     name     = "AWSManagedRulesAmazonIpReputationList"
     priority = 5
-    override_action {
-      none {}
+  override_action {
+      count {}
     }
     statement {
       managed_rule_group_statement {
@@ -175,7 +176,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesAnonymousIpList"
     priority = 6
     override_action {
-      none {}
+      count {}
     }
     statement {
       managed_rule_group_statement {
@@ -189,38 +190,11 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
       sampled_requests_enabled   = true
     }
   }
-
-}
-
-resource "aws_wafv2_rule_group" "default" {
-  name     = var.rule_group_name
-  scope    = "REGIONAL"
-  capacity = 2
-
-  rule {
-    name     = var.rule_name
-    priority = 1
-
-    action {
-      allow {}
-    }
-
-    statement {
-      geo_match_statement {
-        country_codes = var.allowed_country_codes
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = false
-      metric_name                = var.metric_name
-      sampled_requests_enabled   = false
-    }
-  }
-
-  visibility_config {
-    cloudwatch_metrics_enabled = false
-    metric_name                = var.metric_name
-    sampled_requests_enabled   = false
+    tags = {
+    OwnerList       = var.owasp_web_acl_owner
+    EnvironmentList = var.owasp_web_acl_env
+    ProjectList     = var.owasp_web_acl_project
+    EndDate         = var.owasp_web_acl_end_date
   }
 }
+
