@@ -1,7 +1,7 @@
 resource "aws_wafv2_web_acl" "awsMangedRules" {
   name  = var.owasp_web_acl_name
   description = var.owasp_web_acl_description
-  scope = "REGIONAL"
+  scope = var.owasp_web_acl_scope
 
   default_action {
     block {
