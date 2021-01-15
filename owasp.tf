@@ -1,7 +1,9 @@
 resource "aws_wafv2_web_acl" "awsMangedRules" {
-  name  = var.owasp_web_acl_name
+  count = var.apply_owasp_rules ? 1 : 0
+
+  name        = var.owasp_web_acl_name
   description = var.owasp_web_acl_description
-  scope = var.owasp_web_acl_scope
+  scope       = var.owasp_web_acl_scope
 
   default_action {
     block {
@@ -24,7 +26,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
   rule {
     name     = "AWSManagedRulesCommonRule"
     priority = 0
-   override_action {
+    override_action {
       count {}
     }
     statement {
@@ -98,7 +100,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
   rule {
     name     = "AWSManagedRulesSQLiRule"
     priority = 1
-  override_action {
+    override_action {
       count {}
     }
     statement {
@@ -150,7 +152,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
   rule {
     name     = "AWSManagedRulesAmazonIpReputationList"
     priority = 5
-  override_action {
+    override_action {
       count {}
     }
     statement {
@@ -190,7 +192,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
       sampled_requests_enabled   = true
     }
   }
-    tags = {
+  tags = {
     OwnerList       = var.owasp_web_acl_owner
     EnvironmentList = var.owasp_web_acl_env
     ProjectList     = var.owasp_web_acl_project

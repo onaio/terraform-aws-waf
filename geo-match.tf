@@ -1,7 +1,9 @@
 resource "aws_wafv2_web_acl" "customGeoMatchRules" {
-  name  = var.geo_match_web_acl_name
+  count = var.apply_geo_match_rules ? 1 : 0
+
+  name        = var.geo_match_web_acl_name
   description = var.geo_match_web_acl_description
-  scope = var.geo_match_web_acl_scope
+  scope       = var.geo_match_web_acl_scope
 
   default_action {
     block {
@@ -14,7 +16,7 @@ resource "aws_wafv2_web_acl" "customGeoMatchRules" {
     sampled_requests_enabled   = true
   }
 
-    rule {
+  rule {
     name     = var.geo_match_rule_name
     priority = 0
 
@@ -35,7 +37,7 @@ resource "aws_wafv2_web_acl" "customGeoMatchRules" {
     }
   }
 
-    tags = {
+  tags = {
     OwnerList       = var.geo_match_web_acl_owner
     EnvironmentList = var.geo_match_web_acl_env
     ProjectList     = var.geo_match_web_acl_project
