@@ -1,9 +1,8 @@
 resource "aws_wafv2_web_acl" "awsMangedRules" {
-  count = var.apply_owasp_rules ? 1 : 0
+  depends_on = [aws_wafv2_rule_group.default]
 
-  name        = var.owasp_web_acl_name
-  description = var.owasp_web_acl_description
-  scope       = var.owasp_web_acl_scope
+  name  = "WAF_SQL_Protection"
+  scope = "REGIONAL"
 
   default_action {
     block {
@@ -27,7 +26,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesCommonRule"
     priority = 0
     override_action {
-      count {}
+      none {}
     }
     statement {
       managed_rule_group_statement {
@@ -52,7 +51,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesAdminProtectionRule"
     priority = 4
     override_action {
-      count {}
+      none {}
     }
     statement {
       managed_rule_group_statement {
@@ -77,7 +76,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesKnownBadInputsRule"
     priority = 2
     override_action {
-      count {}
+      none {}
     }
     statement {
       managed_rule_group_statement {
@@ -101,7 +100,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesSQLiRule"
     priority = 1
     override_action {
-      count {}
+      none {}
     }
     statement {
       managed_rule_group_statement {
@@ -126,7 +125,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesLinuxRule"
     priority = 3
     override_action {
-      count {}
+      none {}
     }
     statement {
       managed_rule_group_statement {
@@ -153,7 +152,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesAmazonIpReputationList"
     priority = 5
     override_action {
-      count {}
+      none {}
     }
     statement {
       managed_rule_group_statement {
@@ -178,7 +177,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesAnonymousIpList"
     priority = 6
     override_action {
-      count {}
+      none {}
     }
     statement {
       managed_rule_group_statement {
@@ -192,11 +191,67 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
       sampled_requests_enabled   = true
     }
   }
-  tags = {
-    OwnerList       = var.owasp_web_acl_owner
-    EnvironmentList = var.owasp_web_acl_env
-    ProjectList     = var.owasp_web_acl_project
-    EndDate         = var.owasp_web_acl_end_date
+
+  /**
+  Restricting the Geographic Distribution of Content
+  Rule allow users to access content only if they're in one of the countries on a whitelist of approved countries.
+  or prevent users from accessing content if they're in one of the countries on a blacklist of banned countries.
+  priority: 7
+*/
+
+  rule {
+    name     = "rule-group-reference"
+    priority = 8
+
+    override_action {
+      count {}
+    }
+
+    statement {
+      rule_group_reference_statement {
+        arn = aws_wafv2_rule_group.default[0].arn
+
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = false
+      metric_name                = var.geo_match_metric_name
+      sampled_requests_enabled   = false
+    }
   }
+
 }
 
+resource "aws_wafv2_rule_group" "default" {
+  count    = var.apply_geo_match_rules ? 1 : 0
+  name     = var.geo_match_rule_group_name
+  scope    = "REGIONAL"
+  capacity = 2
+
+  rule {
+
+    name     = var.geo_match_rule_name
+    priority = 1
+
+    action {
+      allow {}
+    }
+
+    statement {
+      geo_match_statement {
+        country_codes = var.geo_match_allowed_country_codes
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = false
+      metric_name                = var.geo_match_metric_name
+      sampled_requests_enabled   = false
+    }
+  }
+  visibility_config {
+    cloudwatch_metrics_enabled = false
+    metric_name                = var.geo_match_metric_name
+    sampled_requests_enabled   = false
+  }
+}
