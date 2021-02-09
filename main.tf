@@ -199,24 +199,27 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
   priority: 7
 */
 
-  rule {
-    name     = "rule-group-reference"
-    priority = 8
+  dyamic "rule" {
+    for_each = var.apply_geo_match_rules ? map(var.geo_match_metric_name, []) : {}
+    content {
+      name     = "rule-group-reference"
+      priority = 8
 
-    override_action {
-      count {}
-    }
-
-    statement {
-      rule_group_reference_statement {
-        arn = aws_wafv2_rule_group.default[0].arn
-
+      override_action {
+        count {}
       }
-    }
-    visibility_config {
-      cloudwatch_metrics_enabled = false
-      metric_name                = var.geo_match_metric_name
-      sampled_requests_enabled   = false
+
+      statement {
+        rule_group_reference_statement {
+          arn = aws_wafv2_rule_group.default[0].arn
+
+        }
+      }
+      visibility_config {
+        cloudwatch_metrics_enabled = false
+        metric_name                = rule.key
+        sampled_requests_enabled   = false
+      }
     }
   }
 
