@@ -1,8 +1,6 @@
 resource "aws_wafv2_web_acl" "awsMangedRules" {
-  depends_on = [aws_wafv2_rule_group.default]
-
-  name  = "WAF_SQL_Protection"
-  scope = "REGIONAL"
+  name  = var.web_acl_name
+  scope = var.web_acl_scope
 
   default_action {
     block {
@@ -199,10 +197,10 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
   priority: 7
 */
 
-  dyamic "rule" {
+  dynamic "rule" {
     for_each = var.apply_geo_match_rules ? map(var.geo_match_metric_name, []) : {}
     content {
-      name     = "rule-group-reference"
+      name     = var.rule_group_reference
       priority = 8
 
       override_action {
@@ -222,17 +220,15 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
       }
     }
   }
-
 }
 
 resource "aws_wafv2_rule_group" "default" {
   count    = var.apply_geo_match_rules ? 1 : 0
   name     = var.geo_match_rule_group_name
-  scope    = "REGIONAL"
+  scope    = var.web_acl_scope
   capacity = 2
 
   rule {
-
     name     = var.geo_match_rule_name
     priority = 1
 
