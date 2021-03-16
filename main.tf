@@ -1,6 +1,6 @@
 resource "aws_wafv2_web_acl" "awsMangedRules" {
-  name  = "WAF_SQL_Protection"
-  scope = "REGIONAL"
+  name  = var.web_acl_name
+  scope = var.web_acl_scope
 
   default_action {
     block {
@@ -49,7 +49,7 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     name     = "AWSManagedRulesAdminProtectionRule"
     priority = 4
     override_action {
-      count {}
+      none {}
     }
     statement {
       managed_rule_group_statement {
@@ -190,15 +190,46 @@ resource "aws_wafv2_web_acl" "awsMangedRules" {
     }
   }
 
+  /**
+  Restricting the Geographic Distribution of Content
+  Rule allow users to access content only if they're in one of the countries on a whitelist of approved countries.
+  or prevent users from accessing content if they're in one of the countries on a blacklist of banned countries.
+  priority: 7
+*/
+
+  dynamic "rule" {
+    for_each = var.apply_geo_match_rules ? map(var.geo_match_metric_name, []) : {}
+    content {
+      name     = var.rule_group_reference
+      priority = 8
+
+      override_action {
+        count {}
+      }
+
+      statement {
+        rule_group_reference_statement {
+          arn = aws_wafv2_rule_group.default[0].arn
+
+        }
+      }
+      visibility_config {
+        cloudwatch_metrics_enabled = false
+        metric_name                = rule.key
+        sampled_requests_enabled   = false
+      }
+    }
+  }
 }
 
 resource "aws_wafv2_rule_group" "default" {
-  name     = var.rule_group_name
-  scope    = "REGIONAL"
+  count    = var.apply_geo_match_rules ? 1 : 0
+  name     = var.geo_match_rule_group_name
+  scope    = var.web_acl_scope
   capacity = 2
 
   rule {
-    name     = var.rule_name
+    name     = var.geo_match_rule_name
     priority = 1
 
     action {
@@ -207,20 +238,19 @@ resource "aws_wafv2_rule_group" "default" {
 
     statement {
       geo_match_statement {
-        country_codes = var.allowed_country_codes
+        country_codes = var.geo_match_allowed_country_codes
       }
     }
 
     visibility_config {
       cloudwatch_metrics_enabled = false
-      metric_name                = var.metric_name
+      metric_name                = var.geo_match_metric_name
       sampled_requests_enabled   = false
     }
   }
-
   visibility_config {
     cloudwatch_metrics_enabled = false
-    metric_name                = var.metric_name
+    metric_name                = var.geo_match_metric_name
     sampled_requests_enabled   = false
   }
 }
